@@ -3,6 +3,7 @@
 namespace App\Repositories\Repository;
 
 use App\Models\Product;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class ProductRepository

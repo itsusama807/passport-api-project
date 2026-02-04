@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CategoryService
@@ -31,11 +32,17 @@ class CategoryService
 
     public function allCategories()
     {
-        try {
-            return $this->categoryRepo->all();
-        } catch (Exception $ex) {
-            throw $ex;
-        }
+        // try {
+        //     return $this->categoryRepo->all();
+        // } catch (Exception $ex) {
+        //     throw $ex;
+        // }
+        $categories = Cache::remember(
+            'all_categories',
+            now()->addHour(),
+            fn() => $this->categoryRepo->all()
+        );
+        return $categories;
     }
 
     public function update(array $data, int $id)

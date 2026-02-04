@@ -20,7 +20,7 @@ class CategoryRepository implements CategoryRepositoryInterface
 
     public function all()
     {
-        return Category::with(['products', 'user', 'images'])->get();
+        return Category::with(['products.user','products.images', 'user', 'images'])->get();
     }
 
     public function update(array $data, int $id)

@@ -18,15 +18,16 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-Route::post('/register', [AuthController::class, 'register'])->name('register');
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::middleware('throttle:basic-auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('password/forgot-email-link', [AuthController::class, 'sendResetLinkEmail']);
+    Route::post('password/reset', [AuthController::class, 'resetPassword']);
+    Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
+});
 
-Route::post('password/forgot-email-link', [AuthController::class, 'sendResetLinkEmail']);
-Route::post('password/reset', [AuthController::class, 'resetPassword']);
-//Route for getting refresh_token
-Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
-
-Route::middleware('auth:api')->group(function () {
+//auth api endpoints
+Route::middleware(['auth:api', 'api.permission', 'throttle:api-general'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::prefix('profile')->group(function () {
@@ -39,24 +40,26 @@ Route::middleware('auth:api')->group(function () {
     //products
     Route::prefix('products')->group(function () {
         Route::controller(ProductController::class)->group(function () {
-            Route::get('/', 'index')->middleware('permission:product.view');
-            Route::post('/', 'store')->middleware('permission:product.create');
-            Route::delete('{id}', 'destroy')->middleware('permission:product.delete');
-            Route::get('trashed', 'trashed')->middleware('permission:product.trashed.view');
-            Route::post('{id}/restore', 'restore')->middleware('permission:product.restore');
-            Route::delete('{id}/force', 'forceDelete')->middleware('permission:product.force-delete');
+            Route::get('/', 'index')->name('product.view');
+            Route::post('/', 'store')->name('product.create');
             // update products add categories to previously saved without category
-            Route::put('{id}', 'update')->middleware('permission:product-update');
+            Route::put('{id}', 'update')->name('product.update');
+            Route::delete('{id}', 'destroy')->name('product.delete');
+
+            Route::get('trashed', 'trashed')->name('product.trashed.view');
+            Route::post('{id}/restore', 'restore')->name('product.restore');
+            Route::delete('{id}/force', 'forceDelete')->name('product.force-delete');
+
         });
     });
 
     //categories
     Route::prefix('categories')->group(function () {
         Route::controller(CategoryController::class)->group(function () {
-            Route::get('/','index')->middleware('permission:category.view');
-            Route::post('/','store')->middleware('permission:category.create');
-            Route::put('{id}','update')->middleware('permission:category.update');
-            Route::delete('{id}','destroy')->middleware('permission:category.delete');
+            Route::get('/','index')->name('category.view');
+            Route::post('/','store')->name('category.create');
+            Route::put('{id}','update')->name('category.update');
+            Route::delete('{id}','destroy')->name('category.delete');
         });
     });
 
@@ -69,9 +72,9 @@ Route::middleware('auth:api')->group(function () {
     });
 
     //addd images to models for check morphic relationship
-    Route::controller(ImageController::class)->group(function () {
-        Route::post('products/{product}/images', 'storeProductImage');
-        Route::post('categories/{category}/images', 'storeCategoryImage');
+    Route::controller(ImageController::class)->middleware('throttle:uploads')->group(function () {
+        Route::post('products/{product}/images', 'storeProductImage')->name('product.image.create');
+        Route::post('categories/{category}/images', 'storeCategoryImage')->name('category.image.create');
     });
 });
 

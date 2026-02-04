@@ -24,10 +24,33 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        RateLimiter::for('api-general', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip())
+            ->response(function() {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Too many attempts! Please wait 1 minute.',
+            ], 429);
+            });
         });
-
+        RateLimiter::for('basic-auth', function (Request $request) {
+            return Limit::perMinute(2)->by($request->user()?->id ?: $request->ip())
+            ->response(function() {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Too many login attempts! Please wait 1 minute.',
+            ], 429);
+            });
+        });
+        RateLimiter::for('uploads', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()->id ?: $request->ip())
+            ->response(function() {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Too many attempts! Please wait 1 minute.'
+                ], 429);
+            });
+        });
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Repositories\Repository\ProductRepository;
+use Illuminate\Support\Facades\Cache;
 
 class ProductService
 {
@@ -76,20 +77,30 @@ class ProductService
 
     public function allProducts()
     {
-        try {
-            return $this->repo->all();
-        } catch (Exception $ex) {
-            throw $ex;
-        }
+        // try {
+        //     return $this->repo->all();
+        // } catch (Exception $ex) {
+        //     throw $ex;
+        // }
+        return Cache::remember(
+            'user_' . Auth::id() . '_products',
+            now()->addMinutes(10),
+            fn() => $this->repo->all()
+        );
     }
 
     public function trashedProducts()
     {
-        try {
-            return $this->repo->trashed();
-        } catch (Exception $ex) {
-            throw $ex;
-        }
+        // try {
+        //     return $this->repo->trashed();
+        // } catch (Exception $ex) {
+        //     throw $ex;
+        // }
+        return Cache::remember(
+            'trashed_'.Auth::id().'_products',
+            now()->addMinutes(2),
+            fn () => $this->repo->trashed()
+        );
     }
 
     public function updateProduct(array $data, int $id)

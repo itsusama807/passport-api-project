@@ -5,6 +5,7 @@ namespace App\Repositories\Repository;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use App\Repositories\Interfaces\PermissionRepositoryInterface;
 
 class PermissionRepository implements PermissionRepositoryInterface
@@ -13,6 +14,7 @@ class PermissionRepository implements PermissionRepositoryInterface
     {
         $user = auth()->user();
         $user->givePermissionTo($permissionName);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         return $user->fresh();
     }
 
@@ -20,6 +22,7 @@ class PermissionRepository implements PermissionRepositoryInterface
     {
         $user = auth()->user();
         $user->revokePermissionTo($permissionName);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         return true;
     }
 }
